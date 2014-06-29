@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<style>
+
+path {
+  fill: none;
+  stroke: #777;
+  stroke-linejoin: round;
+}
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script>
+var src = "http://represent.opennorth.ca/boundaries/ontario-electoral-districts/simple_shape";
+var width = 960;
+var height = 1160;
+
+var svg = d3
+    .select("body")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var projection = d3
+    .geo
+    .albers()
+    .scale(1)
+    .translate([0, 0]);
+
+var path = d3
+    .geo
+    .path()
+    .projection(projection);
+
+var buildGeoJson = function(json){
+    var geoJson = {
+        "type": "FeatureCollection",
+        "features": []    
+    };
+
+    json.objects.forEach(function(obj){
+        var feature = {
+            "type": "Feature",
+            "geometry": obj.simple_shape,
+            "properties": {"name": obj.name}
+        };
+        geoJson.features.push(feature);
+
+    });
+
+    return geoJson;
+};
+
+d3.json(src, function(error, json) {
+    var geoJson = buildGeoJson(json);
+    var b = path.bounds(geoJson);
+    var s = .70 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height);
+    var t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+
+    projection
+        .scale(s)
+        .translate(t);
+
+    svg.selectAll("path")
+        .data(geoJson.features)
+        .enter()
+        .append("path")
+        .attr("d", path);
+});
+</script>
+</body>
+</html>
